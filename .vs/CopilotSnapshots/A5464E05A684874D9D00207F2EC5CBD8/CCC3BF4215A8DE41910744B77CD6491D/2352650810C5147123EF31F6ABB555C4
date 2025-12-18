@@ -1,0 +1,150 @@
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ResipWeb.Models;
+using System.Security.Claims;
+
+namespace ResipWeb.Controllers
+{
+    public class AccountController : Controller
+    {
+        private readonly AppDbContext _db;
+        private readonly IPasswordHasher<User> _passwordHasher;
+        private readonly ILogger<AccountController> _logger;
+
+        public AccountController(AppDbContext db, IPasswordHasher<User> passwordHasher, ILogger<AccountController> logger)
+        {
+            _db = db;
+            _passwordHasher = passwordHasher;
+            _logger = logger;
+        }
+
+        [HttpGet]
+        public IActionResult Register()
+        {
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+                return RedirectToAction("Index", "Home");
+
+            return View();
+        }
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            // If some fields were not bound (e.g. static form), try to read from Request.Form as fallback
+            if (model == null)
+            {
+                model = new RegisterViewModel();
+            }
+
+            // Populate missing values from Request.Form
+            try
+            {
+                var form = Request.HasFormContentType ? Request.Form : null;
+                if (form != null)
+                {
+                    if (string.IsNullOrWhiteSpace(model.FullName) && form.ContainsKey("FullName")) model.FullName = form["FullName"].ToString();
+                    if (string.IsNullOrWhiteSpace(model.Email) && form.ContainsKey("Email")) model.Email = form["Email"].ToString();
+                    if (string.IsNullOrWhiteSpace(model.Username) && form.ContainsKey("Username")) model.Username = form["Username"].ToString();
+                    if (string.IsNullOrWhiteSpace(model.Password) && form.ContainsKey("Password")) model.Password = form["Password"].ToString();
+                    if (string.IsNullOrWhiteSpace(model.ConfirmPassword) && form.ContainsKey("ConfirmPassword")) model.ConfirmPassword = form["ConfirmPassword"].ToString();
+                    if (string.IsNullOrWhiteSpace(model.PhoneNumber) && form.ContainsKey("PhoneNumber")) model.PhoneNumber = form["PhoneNumber"].ToString();
+                    if (string.IsNullOrWhiteSpace(model.ShippingAddress) && form.ContainsKey("ShippingAddress")) model.ShippingAddress = form["ShippingAddress"].ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error reading form data");
+            }
+
+            // Re-validate model after population
+            TryValidateModel(model);
+
+            if (!ModelState.IsValid)
+            {
+                // If AJAX/XHR request, return JSON with validation errors
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Headers["Accept"].ToString().Contains("application/json"))
+                {
+                    var errors = ModelState.Where(kv => kv.Value.Errors.Any())
+                        .ToDictionary(kv => kv.Key, kv => kv.Value.Errors.Select(e => e.ErrorMessage).ToArray());
+                    return BadRequest(new { success = false, errors });
+                }
+
+                // For static form posting, we might want to redirect back to registration.html with error messages via TempData
+                // But keep default: render register view to display validation errors
+                return View(model);
+            }
+
+            try
+            {
+                // Check duplicates
+                if (await _db.Users.AnyAsync(u => u.Email == model.Email))
+                {
+                    ModelState.AddModelError(nameof(model.Email), "Email đã được sử dụng.");
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return BadRequest(new { success = false, errors = new { Email = new[] { "Email đã được sử dụng." } } });
+                    return View(model);
+                }
+
+                if (await _db.Users.AnyAsync(u => u.Username == model.Username))
+                {
+                    ModelState.AddModelError(nameof(model.Username), "Tên đăng nhập đã tồn tại.");
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return BadRequest(new { success = false, errors = new { Username = new[] { "Tên đăng nhập đã tồn tại." } } });
+                    return View(model);
+                }
+
+                var user = new User
+                {
+                    FullName = model.FullName,
+                    Email = model.Email,
+                    Username = model.Username,
+                    PhoneNumber = model.PhoneNumber,
+                    ShippingAddress = model.ShippingAddress
+                };
+
+                user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
+                _db.Users.Add(user);
+                await _db.SaveChangesAsync();
+
+                // Sign-in
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Email, user.Email)
+                };
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Headers["Accept"].ToString().Contains("application/json"))
+                {
+                    return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+                }
+
+                return RedirectToAction("Index", "Home");
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "Database update error while registering user {Email}", model?.Email);
+                ModelState.AddModelError(string.Empty, "Lỗi khi lưu dữ liệu. Vui lòng thử lại sau.");
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return StatusCode(500, new { success = false, message = "Lỗi khi lưu dữ liệu" });
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during registration");
+                ModelState.AddModelError(string.Empty, "Đã xảy ra lỗi. Vui lòng liên hệ quản trị.");
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return StatusCode(500, new { success = false, message = "Lỗi hệ thống" });
+                return View(model);
+            }
+        }
+    }
+}

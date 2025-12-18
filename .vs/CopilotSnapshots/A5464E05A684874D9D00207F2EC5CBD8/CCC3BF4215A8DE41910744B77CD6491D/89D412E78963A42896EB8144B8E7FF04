@@ -1,0 +1,35 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ResipWeb.Models
+{
+    public class RegisterViewModel
+    {
+        [Required(ErrorMessage = "Họ và tên là bắt buộc"), StringLength(100)]
+        [Display(Name = "FullName")]
+        public string FullName { get; set; } = "";
+
+        [Required(ErrorMessage = "Email là bắt buộc"), EmailAddress(ErrorMessage = "Email không hợp lệ"), StringLength(150)]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Tên đăng nhập là bắt buộc"), StringLength(50)]
+        [Display(Name = "Username")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc"), DataType(DataType.Password), StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu phải có ít nhất {2} ký tự")]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = "";
+
+        [Required(ErrorMessage = "Xác nhận mật khẩu là bắt buộc"), DataType(DataType.Password), Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp")]
+        [Display(Name = "ConfirmPassword")]
+        public string ConfirmPassword { get; set; } = "";
+
+        [Phone(ErrorMessage = "Số điện thoại không hợp lệ"), StringLength(20)]
+        [Display(Name = "PhoneNumber")]
+        public string? PhoneNumber { get; set; }
+
+        [StringLength(255)]
+        [Display(Name = "ShippingAddress")]
+        public string? ShippingAddress { get; set; }
+    }
+}
