@@ -55,8 +55,7 @@
               "RelativeToolTip": "ResipWeb\\Program.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAGQAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T15:13:32.212Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-18T15:13:32.212Z"
             },
             {
               "$type": "Document",
@@ -68,8 +67,7 @@
               "RelativeToolTip": "ResipWeb\\Controllers\\AccountController.cs",
               "ViewState": "AgIAAGAAAAAAAAAAAAAuwGkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T15:11:24.786Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-18T15:11:24.786Z"
             },
             {
               "$type": "Document",
@@ -81,8 +79,7 @@
               "RelativeToolTip": "ResipWeb\\Models\\User.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAmwBAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T11:02:48.906Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-18T11:02:48.906Z"
             },
             {
               "$type": "Document",
@@ -94,8 +91,7 @@
               "RelativeToolTip": "ResipWeb\\Models\\SanPhamCreateViewModel.cs",
               "ViewState": "AgIAAB8AAAAAAAAAAADwvyQAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T07:02:02.805Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-18T07:02:02.805Z"
             }
           ]
         }
